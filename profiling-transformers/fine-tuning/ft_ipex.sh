@@ -1,4 +1,6 @@
-# Copyright (C) 2022 Intel Corporation
+#!/bin/bash
+
+# Copyright (C) 2022 Intel Corporation                                                                                              
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,17 +15,14 @@
 # and limitations under the License.
 #
 
-#
-#
-# export CUDA_VISIBLE_DEVICES="-1"; \
-export LOG_NAME=`date "+%m%d-%H%M"`
-export DATASET="sst2"
-export BATCH_SIZE=8
-export SEQUENCE_LEN=55
-export MODEL_NAME_OR_PATH="${MODEL_NAME_OR_PATH:-bert-large-uncased}"
-export OUTPUT_DIR="${OUTPUT_DIR:-./logs}"
-export USE_IPEX=""
-export BF16=""
+LOG_NAME=$(date "+%m%d-%H%M")
+DATASET="sst2"
+BATCH_SIZE=32
+SEQUENCE_LEN=55
+DTYPE_FT="fp32"
+TRAIN_EPOCH=1
+MODEL_NAME_OR_PATH="bert-large-uncased"
+OUTPUT_DIR="${OUTPUT_DIR:-./logs}"
 
 while [ "$1" != "" ];
 do
@@ -48,36 +47,38 @@ do
         SEQUENCE_LEN="$1"
         echo "sequence_len is : $SEQUENCE_LEN"
         ;;
-    --use_ipex )
-	USE_IPEX="--use_ipex"
-	echo " use ipex"
-	;;
-    --bf16 )
-	BF16="--bf16"
-        echo "using hf bf16 inference"
+    --dtype_ft )
+        shift
+        DTYPE_FT="$1"
+        echo "dtype_ft is : $DTYPE_FT"
+        ;;
+    --train_epoch )
+        shift
+        TRAIN_EPOCH="$1"
+        echo "train_epoch is : $TRAIN_EPOCH"
         ;;
     -h | --help )
-         echo "Usage: ./inference/cpu_single_instance.sh [OPTIONS]"
+         echo "Usage: $0 [OPTIONS]"
          echo "OPTION includes:"
          echo "   -l | --log_name - the log name of this round"
-         echo "   -d | --dataset - [imdb|sst2] wether to use imdb or sst2 DATASET"
+         echo "   -d | --dataset - [imdb|sst2] whether to use imdb or sst2 DATASET"
          echo "   -b | --batch_size - batch size per instance"
          echo "   -s | --sequence_len - max sequence length"
-         echo "   --bf16 - whether using hf bf16 inference"
-         echo "   --use_ipex - whether using ipex"
+         echo "   --dtype_ft - data type used for fine-tuning"
+         echo "   --train_epoch - train epoch"
          echo "   -h | --help - displays this message"
          exit
       ;;
     * )
         echo "Invalid option: $1"
-        echo "Usage: ./inference/cpu_single_instance.sh [OPTIONS]"
+        echo "Usage: $0 [OPTIONS]"
         echo "OPTION includes:"
         echo "   -l | --log_name - the log name of this round"
-        echo "   -d | --dataset - [imdb|sst2] wether to use imdb or sst2 DATASET"
+        echo "   -d | --dataset - [imdb|sst2] whether to use imdb or sst2 DATASET"
         echo "   -b | --batch_size - batch size per instance"
         echo "   -s | --sequence_len - max sequence length"
-        echo "   --bf16 - whether using hf bf16 inference"
-        echo "   --use_ipex - whether using ipex"
+        echo "   --dtype_ft - data type used for fine-tuning"
+        echo "   --train_epoch - train epoch"
         exit
        ;;
   esac
@@ -85,27 +86,27 @@ do
 done
 
 if [ -z "$LOG_NAME" ]; then
-    pre=`date "+%m%d-%H%M"`
+    pre=$(date "+%m%d-%H%M")
 else
     pre=$LOG_NAME
 fi
 
 OUTPUT_DIR=$OUTPUT_DIR'/'$pre'/'$DATASET
-echo $OUTPUT_DIR
+echo "$OUTPUT_DIR"
 
-mkdir -p $OUTPUT_DIR
-
+mkdir -p "$OUTPUT_DIR"/output_test
 
 export CUDA_VISIBLE_DEVICES="-1"; \
-python ./src/run_pt.py \
-        --model_name_or_path $MODEL_NAME_OR_PATH \
-        --dataset $DATASET \
-        --output_dir $OUTPUT_DIR/output_test \
+python ./src/run_finetune.py \
+        --model_name_or_path "$MODEL_NAME_OR_PATH" \
+        --dataset "$DATASET" \
+        --output_dir "$OUTPUT_DIR"/output_test \
+        --finetune_impl ipex \
+        --dtype_ft "$DTYPE_FT" \
+        --do_train \
+        --max_seq_len "$SEQUENCE_LEN" \
+        --num_train_epochs "$TRAIN_EPOCH" \
+        --per_device_train_batch_size "$BATCH_SIZE" \
         --do_predict \
-        --max_seq_len $SEQUENCE_LEN \
-        --per_device_eval_batch_size $BATCH_SIZE \
-        --no_cuda \
-	$USE_IPEX \
-	$BF16 \
-        2>&1 | tee $OUTPUT_DIR/test_$i.log
-
+        --per_device_eval_batch_size 8 \
+        2>&1 | tee "$OUTPUT_DIR"/test.log

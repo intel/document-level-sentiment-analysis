@@ -4,8 +4,8 @@
 
 |Categoty             |  Script |
 |---|---|
-|CPU Single Instance  |  cpu_single_instance.sh |
-|CPU Multi Instances  |  cpu_multi_instance.sh |
+|CPU Single Instance  |  inf_trainer_single.sh |
+|CPU Multi Instances  |  inf_trainer_multi.sh |
 
 > Note: Please use the fine-tuned model for correct accuracy. Just change the `MODEL_NAME_OR_PATH` in the script before you running. By default, the `MODEL_NAME_OR_PATH` is `bert-large-uncased` which is downloaded from the Hugging Face website.
 
@@ -14,22 +14,21 @@
 ### Single instance
 
 ```
-./inference/cpu_single_instance.sh
+./inference/inf_trainer_single.sh
 ```
 
 By default, it will launch 1 instance to run inference with SST-2 dataset and FP32 precision. You can change the configurations in the file or pass parameters when running the script.
 
-Below is the help message by using the command `./inference/cpu_single_instance.sh -h`:
+Below is the help message by using the command `./inference/inf_trainer_single.sh -h`:
 
 ```markdown
-Usage: ./inference/cpu_single_instance.sh [OPTIONS]
+Usage: ./inference/inf_trainer_single.sh [OPTIONS]
 OPTION includes:
    -l | --log_name - the log name of this round
-   -d | --dataset - [imdb|sst2] wether to use imdb or sst2 DATASET
+   -d | --dataset - [imdb|sst2] whether to use imdb or sst2 DATASET
    -b | --batch_size - batch size per instance
    -s | --sequence_len - max sequence length
-   --bf16 - whether using hf bf16 inference
-   --use_ipex - whether using ipex
+   --dtype_inf - data type used for inference
    -h | --help - displays this message
 ```
 
@@ -38,22 +37,21 @@ OPTION includes:
 ### Multi-instance
 
 ```
-./inference/cpu_multi_instance.sh
+./inference/inf_trainer_multi.sh
 ```
 
 By default, it will launch 2 instances (1 instance/socket) to run inference with SST-2 dataset and FP32 precision. You can change the configurations in the file or pass parameters when running the script.
 
-Below is the help message by using the command `./inference/cpu_multi_instance.sh -h`
+Below is the help message by using the command `./inference/inf_trainer_multi.sh -h`
 
 ```markdown
-Usage: ./inference/cpu_multi_instance.sh [OPTIONS]
+Usage: ./inference/inf_trainer_multi.sh [OPTIONS]
 OPTION includes:
    -l | --log_name - the log name of this round
-   -d | --dataset - [imdb|sst2] wether to use imdb or sst2 DATASET
+   -d | --dataset - [imdb|sst2] whether to use imdb or sst2 DATASET
    -n | --num_of_ins_per_socket - number of instance per socket
    -b | --batch_size - batch size per instance
    -s | --sequence_len - max sequence length
-   --bf16 - whether using hf bf16 inference
-   --use_ipex - whether using ipex
+   --dtype_inf - data type used for inference
    -h | --help - displays this message
 ```

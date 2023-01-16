@@ -28,14 +28,10 @@ if [ "x$pt_version" == "x" ] ; then
   exit 1
 fi
 
-branch=$(echo $pt_version | tr "." " " | awk '{print "ccl_torch" $1 "." $2}')
 
-if ! test -d ./torch-ccl ; then
-  git clone https://github.com/intel/torch-ccl.git
+if ! test -d ./tpp-pytorch-extension ; then
+  git clone https://github.com/libxsmm/tpp-pytorch-extension.git
 fi
-cd torch-ccl
-# workaround to disable linker error for linking to mkl libraries
-# export CMAKE_FIND_DEBUG_MODE=ON
-export CMAKE_DISABLE_FIND_PACKAGE_MKL=TRUE
-git checkout $branch && git submodule sync && git submodule update --init --recursive && CC=gcc CXX=g++ CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ python setup.py install
+cd tpp-pytorch-extension
+git submodule update --init && python setup.py install
 
