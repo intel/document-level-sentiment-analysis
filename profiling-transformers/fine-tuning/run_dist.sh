@@ -1,5 +1,6 @@
 #!/bin/bash
-# Copyright (C) 2022 Intel Corporation
+
+# Copyright (C) 2022 Intel Corporation                                                                                              
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +15,8 @@
 # and limitations under the License.
 #
 
-#
 
+OUTPUT_DIR="${OUTPUT_DIR:-./logs}"
 function print_vars {
   for VAR in ${!CCL*} ${!I_MPI*} ${!i_mpi*} ${!KMP_*} ${!OMP_*} ${!ATL_*} LD_PRELOAD ${!DLRM_*} ${!PYTORCH_*} ${!PCL_*} ${!LIBXSMM_*} ${!EMULATE_*} DATALOADER_WORKER_COUNT VIRTUAL_ENV ${!ARGS_*} $@ ; do
     if ! test -z ${!VAR} ; then
@@ -28,6 +29,10 @@ SINGLE_SOCKET_ONLY=0
 
 while (( "$#" )); do
   case "$1" in
+    -l)
+    LOG_NAME=$2
+    shift 2
+    ;;
     -n|-np)
       ARGS_NTASKS=$2
       shift 2
@@ -57,6 +62,17 @@ while (( "$#" )); do
       ;;
   esac
 done
+
+if [ -z "$LOG_NAME" ]; then
+    pre=$(date "+%m%d-%H%M")
+else
+    pre=$LOG_NAME
+fi
+
+OUTPUT_DIR=$OUTPUT_DIR'/'$pre'/'$DATASET
+echo "$OUTPUT_DIR"
+
+mkdir -p "$OUTPUT_DIR"/output_test
 
 if ! test -z $SLURM_JOB_ID ; then
   PREFIX="srun -n 1 -N 1 "
@@ -195,7 +211,7 @@ echo "Running mpiexec.hydra $@"
 echo "Start Time:  `date`"
 SECONDS=0
 #mpiexec.hydra ${MPIEXE_ARGS} ${CMD} $@
-mpiexec.hydra $@
+mpiexec.hydra $@ -o "$OUTPUT_DIR" 2>&1 | tee "$OUTPUT_DIR"/test.log
 echo "End Time:    `date`"
 duration=$SECONDS
 echo "Total Time: $(($duration / 60)) min and $(($duration % 60)) sec"

@@ -15,7 +15,6 @@
 # and limitations under the License.
 #
 
-#
 
 GCC_GOOD=`gcc --version | awk '/gcc/ && ($3+0)>=8.3{print "1"}'`
 if [ "x$GCC_GOOD" != "x1" ] ; then
